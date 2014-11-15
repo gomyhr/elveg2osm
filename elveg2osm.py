@@ -386,15 +386,16 @@ for wid,w in osmobj.ways.items():
     for i,segment_id in enumerate(segment_ids):
         osmobj.ways[segment_id].tags.update(newway_tags[i])
 
-    # TODO: Find nodes with VEGSPERRING and merge data with nodes with
-    # same location which belong to ways 
-    # (the information in XXXXSperr.txt is redundant)
 
-    # TODO: Add amenity="ferry terminal" on nodes with OBJTYPE=Ferjekai
+# TODO: Find nodes with VEGSPERRING and merge data with nodes with
+# same location which belong to ways 
+# (the information in XXXXSperr.txt is redundant)
 
-    # TODO: Remove all objects with action=delete
+# TODO: Add amenity="ferry terminal" on nodes with OBJTYPE=Ferjekai
 
-    # TODO: Add turn restrictions from XXXXSving.txt
+# TODO: Remove all objects with action=delete
+
+# TODO: Add turn restrictions from XXXXSving.txt
 
 osmobj.save(osm_output)
 
