@@ -80,6 +80,38 @@ osmapis.wrappers["way"]  = ElvegWay
 def warn(warning):
     sys.stderr.write(warning + '\n')
 
+def waynode_from_coord(coord):
+    # This assumes that there is only one node for a given
+    # coordinates that is part of a way.
+    global way_node_ids
+    global node_lookup
+    way_nodes = [nid for nid in node_lookup[coord] if nid in way_node_ids]
+    if len(way_nodes) > 1:
+        sys.stderr.write('More than one way nodes at coordinate:\n')
+        sys.stderr.write(str(coord) + '\n')
+    elif len(way_nodes) == 0:
+        #sys.stderr.write('No way nodes at coordinate:\n')
+        #sys.stderr.write(str(coord) + '\n')
+        return None
+    return way_nodes[0]
+
+def merge_nodes(to_node_id, from_node_id):
+    #print 'Merging into node {0} from node {1}'.format(to_node_id, from_node_id)
+    global osmobj
+    for tag in osmobj.nodes[from_node_id].tags.iterkeys():
+        if osmobj.nodes[to_node_id].tags.has_key(tag):
+            # Potential conflict, but only if the value is different
+            if osmobj.nodes[to_node_id].tags[tag] != osmobj.nodes[from_node_id].tags[tag]:
+                # A conflict for real
+                errmsg = 'Conflict in merging nodes {0} and {1} for tag {2}\n'.format(to_node_id, from_node_id, tag)
+                # Hairy - if this Exception is caught, some tags will have been copied
+                raise KeyError(errmsg)
+        # No confict, so copy tags
+    # Delete the from_node
+    osmobj.nodes.pop(from_node_id)
+
+
+
 def create_osmtags(elveg_tags):
     '''Create tags based on standard tags in ????Elveg_default.osm'''
 
@@ -325,6 +357,11 @@ with open(elveg_hoyde, 'rb') as eh:
 # Read OSM file
 osmobj = ElvegOSM.load(osm_input)
 
+# Loop through all nodes and move tags to elveg_tags
+for nid,node in osmobj.nodes.items():
+    node.elveg_tags = node.tags
+    node.tags = {}
+
 # Loop through all ways in osmobj and 
 # - swap original tags with OSM tags.
 # - extract the way length from the Elveg VPA tag and
@@ -386,14 +423,62 @@ for wid,w in osmobj.ways.items():
     for i,segment_id in enumerate(segment_ids):
         osmobj.ways[segment_id].tags.update(newway_tags[i])
 
+# Loop through all ways and make a set of those nodes that are part of a way
+way_node_ids = set()
+for way in osmobj.ways.values():
+    way_node_ids.update(way.nds)
+# ... and those that are not part of a way
+noway_node_ids = set(osmobj.nodes).difference(way_node_ids)
 
-# TODO: Find nodes with VEGSPERRING and merge data with nodes with
-# same location which belong to ways 
-# (the information in XXXXSperr.txt is redundant)
+# Make a table with hash of indices of the nodes, in order to identify
+# nodes with (exactly) the same coordinates
+node_lookup = dict()
+node_overlaps = set()
+for id,node in osmobj.nodes.iteritems():
+    key = (node.lat, node.lon)
+    if node_lookup.has_key(key):
+        node_lookup[key].append(id)
+        node_overlaps.add(key)
+    else:
+        node_lookup[key] = [id]
+
+# DATA CHECKING: Check if any way nodes also have tags, or if all tags
+# are on duplicate nodes
+#for waynode_id in way_nodes:
+#    waynode = osmobj.nodes[waynode_id]
+#    if len(waynode.tags) > 0:
+#        print waynode.tags
+
+# DATA CHECKING: Check that no coordinates have more than two nodes
+for coord in node_overlaps:
+    if len(node_lookup[coord]) != 2:
+        print "Warning: The following (coordinates, node ids) have more than two nodes per coordinate"
+        print (coord,node_lookup[coord])
+
+# Loop through and process all single nodes
+for nid in noway_node_ids:
+    noway_node = osmobj.nodes[nid]
+    coord = (noway_node.lat, noway_node.lon)
+    if noway_node.elveg_tags['OBJTYPE'] == 'Vegsperring':
+        # Find the other waynode that has the same coordinates
+        way_node_id = waynode_from_coord(coord)
+        if way_node_id is None:
+            sys.stderr.write('Warning: Unable to merge Vegsperring at coordinates ' + str(coord) + '\n')
+        else:
+            # Merge tags into the way node
+            merge_nodes(way_node_id, noway_node.id)
+    elif noway_node.elveg_tags['OBJTYPE'] == 'Kommunedele':
+        # We do not use this tag, mark this node for deletion
+        noway_node.tags['action'] = 'delete'
+    elif noway_node.elveg_tags['OBJTYPE'] == 'Ferjekai':
+        # These nodes are not connected to the road network
+        # In OSM, they should ideally be on the node between the road and the ferry route.
+        noway_node.tags['amenity'] = 'ferry terminal'
+
 
 # TODO: Add amenity="ferry terminal" on nodes with OBJTYPE=Ferjekai
 
-# TODO: Remove all objects with action=delete
+# TODO: Remove all ways and non-way nodes with action=delete
 
 # TODO: Add turn restrictions from XXXXSving.txt
 
