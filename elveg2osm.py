@@ -198,14 +198,68 @@ def create_osmtags(elveg_tags):
         osmtags['note'] = 'Consider adding sidewalk as a tag on the road'
     
 
+    # Add information about lanes from the VKJORFLT tag (oneway=*, lanes=*)
+    if elveg_tags.has_key('VKJORFLT'):
+        # This probably only applies to roads and ferry routes - verify that
+        if elveg_tags['OBJTYPE'] not in roadOBJTYPEs and elveg_tags['VKJORFLT'] != '1#2'    :
+            #print elveg_tags
+            warn(u'Processing VKJORFLT tag for OBJTYPE {OBJTYPE} for TRANSID {TRANSID}: {VKJORFLT}'.format(**elveg_tags))
+        # Use the parse_lanes() function find the correct tags
+        lane_tags = parse_lanes(elveg_tags['VKJORFLT'])
+        osmtags.update(lane_tags)
+
     # TODO: OBJTYPE="Frittst\xe5ende trapp" if they look useful
 
     # TODO: MEDIUM=L should be brige=yes, layer=1
     # TODO: MEDIUM=U should be tunnel=yes, layer=-1
 
-    # TODO: Add information about lanes from the VKJORFLT tag (oneway=*, lanes=*)
-
     return osmtags
+
+def parse_lanes(lane_string):
+    lane_tags = dict()
+
+    # Early exit for the most commone values
+    if lane_string == '1#2':
+        # Most common case - one lane in each direction - no special tags
+        return lane_tags
+    elif lane_string == '1':
+        # One-way street along way direction
+        lane_tags['oneway'] = 'yes'
+        return lane_tags
+    elif lane_string == '2':
+        # One-way street opposite to way direction
+        lane_tags['oneway'] = '-1'
+        return lane_tags
+    elif lane_string == '1#3':
+        # One-way street along way direction
+        lane_tags['oneway'] = 'yes'
+        lane_tags['lanes'] = '2'
+        return lane_tags
+    elif lane_string == '2#4':
+        # One-way street along way direction
+        lane_tags['oneway'] = '-1'
+        lane_tags['lanes'] = '2'
+        return lane_tags
+    elif lane_string == '1#3#5':
+        # One-way street along way direction
+        lane_tags['oneway'] = 'yes'
+        lane_tags['lanes'] = '3'
+        return lane_tags
+    elif lane_string == '2#4#6':
+        # One-way street along way direction
+        lane_tags['oneway'] = '-1'
+        lane_tags['lanes'] = '3'
+        return lane_tags
+    elif lane_string == '':
+        # Sometimes this tag is empty -- assume that this means nothing special
+        return lane_tags
+
+    # TODO: Split lane string into individual lanes
+    # Postfix H1, H2, V1, V2 are for turning lanes, 
+    # postfix K is for public service vehicles (PSV)
+    # postfix O is for "waiting lanes", e.g. at ferry terminals.
+    lane_tags['note'] = "Elveg lane tags: {0}".format(lane_string)
+    return lane_tags
 
 def split_way(osmobj, way_id, split_points):
     '''Split way at split points.
