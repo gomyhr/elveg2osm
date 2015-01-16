@@ -208,10 +208,29 @@ def create_osmtags(elveg_tags):
         lane_tags = parse_lanes(elveg_tags['VKJORFLT'])
         osmtags.update(lane_tags)
 
-    # TODO: OBJTYPE="Frittst\xe5ende trapp" if they look useful
+    # Add information about tunnels and bridges from MEDIUM tag
+    if elveg_tags.has_key('MEDIUM'):
+        # Give a warning if this tag is on a non-road object
+        if elveg_tags['OBJTYPE'] not in roadOBJTYPEs.union([u'GangSykkelVegSenterlinje']):
+            warn(u"Processing MEDIUM tag for OBJTYPE {OBJTYPE} for TRANSID {TRANSID}: {MEDIUM}".format(**elveg_tags))
+        if elveg_tags['MEDIUM'] == 'L':
+            osmtags['bridge'] = 'yes'
+            osmtags['layer'] = '1'
+        elif elveg_tags['MEDIUM'] == 'U':
+            osmtags['tunnel'] = 'yes'
+            osmtags['layer'] = '-1'
+        elif elveg_tags['MEDIUM'] == 'B':
+            # B means "through a building".
+            # This could be tagged with covered=yes (current tagging
+            # for Perleporten in Trondheim), but tunnel=building_passage
+            # seems to be preferred.
+            warn(u"Processing MEDIUM tag 'B' for OBJTYPE {OBJTYPE} for TRANSID {TRANSID}".format(**elveg_tags))
+            osmtags['tunnel'] = 'building_passage'
+        else:
+            # There should be no other possible values for MEDIUM
+            warn(u"Unknown MEDIUM value '{MEDIUM}' for OBJTYPE {OBJTYPE} for TRANSID {TRANSID}".format(**elveg_tags))
 
-    # TODO: MEDIUM=L should be brige=yes, layer=1
-    # TODO: MEDIUM=U should be tunnel=yes, layer=-1
+    # TODO: OBJTYPE="Frittst\xe5ende trapp" if they look useful
 
     return osmtags
 
