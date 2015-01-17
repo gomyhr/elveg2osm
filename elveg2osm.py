@@ -141,7 +141,7 @@ def create_osmtags(elveg_tags):
         # Split VNR tag
         # The "vegnummer" tag is optional, but let's assume it is always present for now
         # (i.e. fix it if it causes problems)
-        vegkategori,vegstatus,vegnummer = [s.strip() for s in elveg_tags['VNR'].split(':')]
+        vegkategori,vegstatus,vegnummer = [s.strip(':;') for s in elveg_tags['VNR'].split()]
 
         # There are more vegstatus values than listed in https://wiki.openstreetmap.org/w/images/c/cc/Elveg_SOSI_4.0_2008.pdf
         # There is a more complete list in chapter 7.3.11 in 
@@ -307,7 +307,7 @@ def split_way(osmobj, way_id, split_points):
 
     # Compute VPA length and normalize split_points to geographic length
     if way.elveg_tags.has_key("VPA"):
-        vpa = [int(n) for n in way.elveg_tags["VPA"].split(':')]
+        vpa = [int(n.strip(':;')) for n in way.elveg_tags["VPA"].split()]
     else:
         # These roads are probably not split, so 1.0 is fine, but raise Exception for now
         #corrction_factor = 1.0
@@ -449,7 +449,7 @@ for wid,w in osmobj.ways.items():
 
     # Add way length as given by VPA to the roadddata structure
     transid = w.elveg_tags['TRANSID']
-    vpa = [int(n) for n in w.elveg_tags["VPA"].split(':')]
+    vpa = [int(n.strip(':;')) for n in w.elveg_tags["VPA"].split()]
     # We do not care about those ways where we have no data to add,
     # so move to next if this is the case.
     if not roaddata.has_key(transid):
