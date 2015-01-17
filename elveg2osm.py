@@ -464,6 +464,15 @@ for wid,w in osmobj.ways.items():
             end_points.extend([d[endpoint_type] for d in roaddata[transid].get(restriction_type, [])])
     end_points = list(set(end_points))
     end_points.sort()
+    
+    # Test endpoints from .txt files against VPA lengths
+    # There is at least one case where the end point is outside the VPA meter range
+    # Remove end points outside the range
+    while end_points[-1] > roaddata[transid]['length']:
+        warntemplate = "Warning: End point {0} m outside of VPA length of road ({1} m) for TRANSID {2}"
+        warnstring = warntemplate.format(end_points[-1], roaddata[transid]['length'], transid)
+        warn(warnstring)
+        end_points.pop()
 
     # Make a list of intervals, representing the new ways after a split
     # For most ways, there will be only one interval, but whenever
