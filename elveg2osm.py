@@ -325,37 +325,64 @@ def split_way(osmobj, way_id, split_points):
         current_split_point = split_points_normalized.pop()
         upper_split_index = np.searchsorted(node_distances, current_split_point)
 
-        # Find the coordinates for the new split node
-        from_node_id = way.nds[upper_split_index - 1]
-        to_node_id = way.nds[upper_split_index]
-        from_node = osmobj.nodes[from_node_id]
-        to_node = osmobj.nodes[to_node_id]
-        ggresults = gg.Geodesic.WGS84.Inverse(from_node.lat, from_node.lon, to_node.lat, to_node.lon)
-        distance = ggresults['s12']
-        azi1 = ggresults['azi1']
-        dist_from_last_node = current_split_point - node_distances[upper_split_index - 1]
-        ggresults = gg.Geodesic.WGS84.Direct(from_node.lat, from_node.lon, azi1, dist_from_last_node)
-        newlon = ggresults['lon2']
-        newlat = ggresults['lat2']
+        # Find the distance to the nearest nodes
+        # (for checking if a new node should be created)
+        distance_to_upper = node_distances[upper_split_index] - current_split_point
+        distance_to_lower = current_split_point - node_distances[upper_split_index - 1]
+        
+        # Decide if a new node should be created
+        # Reuse node if closer than 0.5 m
+        if distance_to_upper < 0.5 or distance_to_lower < 0.5:
+            # Verify that we have no negative distances (which is a bug)
+            if distance_to_upper < 0. or distance_to_lower < 0.:
+                warn("Negative distances for TRANSID {0}".format(transid))
+            # Reuse closest node
+            if distance_to_upper < distance_to_lower:
+                split_index = upper_split_index
+            else:
+                split_index = upper_split_index - 1
+            # Create a new way from the split node to the end of the way
+            newway_nodes = way.nds[split_index:]
+            newway = ElvegWay(tags=way.tags, nds=newway_nodes)
+            splitway_id_list.append(newway.id)
+            osmobj.ways[newway.id] = newway
+            
+            # Remove the new way from the old way
+            # (the split_index should be included in both ways)
+            way.nds = way.nds[:split_index + 1]
+            
+        else:
+            # Find the coordinates for the new split node
+            from_node_id = way.nds[upper_split_index - 1]
+            to_node_id = way.nds[upper_split_index]
+            from_node = osmobj.nodes[from_node_id]
+            to_node = osmobj.nodes[to_node_id]
+            ggresults = gg.Geodesic.WGS84.Inverse(from_node.lat, from_node.lon, to_node.lat, to_node.lon)
+            distance = ggresults['s12']
+            azi1 = ggresults['azi1']
+            dist_from_last_node = current_split_point - node_distances[upper_split_index - 1]
+            ggresults = gg.Geodesic.WGS84.Direct(from_node.lat, from_node.lon, azi1, dist_from_last_node)
+            newlon = ggresults['lon2']
+            newlat = ggresults['lat2']
 
-        # Create the new node
-        split_node = ElvegNode(attribs={"lon": newlon, "lat": newlat})
-        if osmobj.nodes.has_key(split_node.id):
-            # This should not happen if ElvegNode.__init__() does the right thing
-            raise Exception('Almost overwrote node {0}\n'.format(split_node.id))
-        osmobj.nodes[split_node.id] = split_node
+            # Create the new node
+            split_node = ElvegNode(attribs={"lon": newlon, "lat": newlat})
+            if osmobj.nodes.has_key(split_node.id):
+                # This should not happen if ElvegNode.__init__() does the right thing
+                raise Exception('Almost overwrote node {0}\n'.format(split_node.id))
+            osmobj.nodes[split_node.id] = split_node
 
-        # TEMPORARY:
-        osmobj.nodes[split_node.id].tags['newnode'] = 'yes'
+            # TEMPORARY:
+            osmobj.nodes[split_node.id].tags['newnode'] = 'yes'
 
-        # Create a new way from the split_point to the end of the way
-        newway_nodes = [split_node.id] + way.nds[upper_split_index:]
-        newway = ElvegWay(tags=way.tags, nds=newway_nodes)
-        splitway_id_list.append(newway.id)
-        osmobj.ways[newway.id] = newway
+            # Create a new way from the split_point to the end of the way
+            newway_nodes = [split_node.id] + way.nds[upper_split_index:]
+            newway = ElvegWay(tags=way.tags, nds=newway_nodes)
+            splitway_id_list.append(newway.id)
+            osmobj.ways[newway.id] = newway
 
-        # Remove nodes for the new way from the old way
-        way.nds = way.nds[:upper_split_index] + [split_node.id]
+            # Remove nodes for the new way from the old way
+            way.nds = way.nds[:upper_split_index] + [split_node.id]
 
     # Finally, add the original way, which is the first segment of the
     # newly split way.
