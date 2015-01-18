@@ -1,5 +1,6 @@
 #! /usr/bin/env python2
 import sys
+import os
 import osmapis
 import csv
 import numpy as np
@@ -425,31 +426,35 @@ with open(elveg_fart, 'rb') as ef:
         roaddata[transid]['maxspeed'].append({'maxspeed': fart_limit,
                                               'start': fart_start,
                                               'stop': fart_stop})
-# Add height limits to roaddata
-with open(elveg_hoyde, 'rb') as eh:
-    # Read first four header lines
-    eh_header = eh.next()
-    eh_export_line = eh.next()
-    eh_empty_line1 = eh.next()
-    eh_empty_line2 = eh.next()
+                                              
+# Add height limits to roaddata (if the file exists)
+if not os.path.isfile(elveg_hoyde):
+    warn("File {0} does not exist and is not used".format(elveg_hoyde))
+else:
+    with open(elveg_hoyde, 'rb') as eh:
+        # Read first four header lines
+        eh_header = eh.next()
+        eh_export_line = eh.next()
+        eh_empty_line1 = eh.next()
+        eh_empty_line2 = eh.next()
 
-    # Then use csv module for reading data
-    reader = csv.DictReader(eh, delimiter=';')
-    for row in reader:
-        transid = row[' TransID']
+        # Then use csv module for reading data
+        reader = csv.DictReader(eh, delimiter=';')
+        for row in reader:
+            transid = row[' TransID']
 
-        height_start = int(row['Fra'])
-        height_stop =  int(row['   Til'])
-        height_length = height_stop - height_start
-        height_limit = row['H\xf8yde']
+            height_start = int(row['Fra'])
+            height_stop =  int(row['   Til'])
+            height_length = height_stop - height_start
+            height_limit = row['H\xf8yde']
 
-        if not roaddata.has_key(transid):
-            roaddata[transid] = {}
-        if not roaddata[transid].has_key('maxheight'):
-            roaddata[transid]['maxheight'] = []
-        roaddata[transid]['maxheight'].append({'maxheight': height_limit,
-                                               'start': height_start,
-                                               'stop': height_stop})
+            if not roaddata.has_key(transid):
+                roaddata[transid] = {}
+            if not roaddata[transid].has_key('maxheight'):
+                roaddata[transid]['maxheight'] = []
+            roaddata[transid]['maxheight'].append({'maxheight': height_limit,
+                                                   'start': height_start,
+                                                   'stop': height_stop})
 
 # TODO: Add information from XXXXAksel.txt to roadddata,
 # and add relevant tagging.
