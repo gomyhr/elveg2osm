@@ -394,10 +394,20 @@ def split_way(osmobj, way_id, split_points):
 
         
 # Read input arguments
-osm_input = sys.argv[1]
-elveg_fart = sys.argv[2]
-elveg_hoyde = sys.argv[3]
-osm_output = sys.argv[4]
+directory = sys.argv[1]
+if len(sys.argv) >= 3:
+    kommune_number = sys.argv[2]
+else:
+    kommune_number = directory.strip('/')[-4:]
+    # Check that it is really a number
+    kummune_int = int(kommune_number)
+
+
+# Find the names of the *.txt files
+osm_input = os.path.join(directory, kommune_number + 'Elveg_default.osm')
+osm_output = os.path.join(directory, kommune_number + 'Elveg.osm')
+elveg_fart = os.path.join(directory, kommune_number + 'Fart.txt')
+elveg_hoyde = os.path.join(directory, kommune_number + 'Hoyde.txt')
 
 # Loop over speed limits and tags where the whole 
 # way where possible. Other places, add to split list

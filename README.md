@@ -4,9 +4,12 @@ elveg2osm
 Conversion from Elveg data to openstreetmap
 
 #Usage:
-`elveg2osm.py XXXXElveg_default.osm XXXXFart.txt XXXXHoyde.txt output.osm`
+`elveg2osm.py dir XXXX`
 
-XXXXElveg_default.osm is output from `sosi2osm XXXXElveg.SOS default.lua >XXXXElveg_default.osm`.
+The directory dir contains a file called XXXXElveg\_default, which is the
+output of the command
+`sosi2osm XXXXElveg.SOS default.lua >XXXXElveg_default.osm`.
+and at least the file `XXXXFart.txt`.
 
 XXXX is the 4-digit number representing the municipality listed at http://www.statkart.no/Kunnskap/Fakta-om-Norge/Fylker-og-kommuner/Tabell/
 

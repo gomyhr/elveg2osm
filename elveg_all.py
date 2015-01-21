@@ -43,4 +43,4 @@ for kn in kommune_numbers:
     osmoutput = os.path.join(kommune_dir, kn + 'Elveg.osm')
     logfile = os.path.join(kommune_dir, kn + 'elveg2osm.log')
     os.system('sosi2osm {0} default.lua >{1}'.format(sosifile, osmfile))
-    os.system('./elveg2osm.py {0} {1} {2} {3} >{4} 2>&1'.format(osmfile, fartfile, hoydefile, osmoutput, logfile))
+    os.system('./elveg2osm.py {0} {1} >{2} 2>&1'.format(kommune_dir, kn, logfile))
