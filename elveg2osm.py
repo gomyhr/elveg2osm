@@ -408,6 +408,7 @@ osm_input = os.path.join(directory, kommune_number + 'Elveg_default.osm')
 osm_output = os.path.join(directory, kommune_number + 'Elveg.osm')
 elveg_fart = os.path.join(directory, kommune_number + 'Fart.txt')
 elveg_hoyde = os.path.join(directory, kommune_number + 'Hoyde.txt')
+osm_barrier_output = os.path.join(directory, kommune_number + 'barriers.osm')
 
 # Loop over speed limits and tags where the whole 
 # way where possible. Other places, add to split list
@@ -584,6 +585,37 @@ for nid in noway_node_ids:
     noway_node = osmobj.nodes[nid]
     coord = (noway_node.lat, noway_node.lon)
     if noway_node.elveg_tags['OBJTYPE'] == 'Vegsperring':
+        # Tag the barrier with OSM tags
+        vegsperringtype = noway_node.elveg_tags['VEGSPERRINGTYPE']
+        if vegsperringtype == 'Betongkjegle':
+            noway_node.tags['barrier'] = 'block'
+        elif vegsperringtype == u'Bilsperre':
+            # This seems to be any type of barrier that has wide enough
+            # openings to only stop cars.
+            noway_node.tags['barrier'] = 'yes'
+        elif vegsperringtype == u'Bussluse':
+            noway_node.tags['barrier'] = 'bus_trap'
+        elif vegsperringtype == u'L\xe5st bom':
+            noway_node.tags['barrier'] = 'gate'
+        elif vegsperringtype == u'New Jersey':
+            noway_node.tags['barrier'] = 'jersey_barrier'
+        elif vegsperringtype == u'R\xf8rgelender':
+            # This describes the material more than the actual barrier
+            # Similar to barrier=fence, but usually it is possible to
+            # walk or bike around
+            noway_node.tags['barrier'] = 'yes'
+        elif vegsperringtype == u'Steinblokk':
+            noway_node.tags['barrier'] = 'block'
+        elif vegsperringtype == u'Trafikkavviser':
+            # It seems that roads with this kind of barrier are 
+            # best tagged as footways in OSM.
+            # I suppose the barrier itself could be anything.
+            noway_node.tags['barrier'] = 'yes'
+        elif vegsperringtype == u'Ukjent':
+            noway_node.tags['barrier'] = 'yes'
+        else:
+            warn('Unknown barrier: {0}'.format(vegsperringtype))
+            noway_node.tags['barrier'] = 'yes'
         # Find the other waynode that has the same coordinates
         way_node_id = waynode_from_coord(coord)
         if way_node_id is None:
