@@ -143,7 +143,11 @@ def create_osmtags(elveg_tags):
         # Split VNR tag
         # The "vegnummer" tag is optional, but let's assume it is always present for now
         # (i.e. fix it if it causes problems)
-        vegkategori,vegstatus,vegnummer = [s.strip(':;') for s in elveg_tags['VNR'].split()]
+        if elveg_tags.has_key('VNR'):
+            vegkategori,vegstatus,vegnummer = [s.strip(':;') for s in elveg_tags['VNR'].split()]
+        else:
+            warn('VNR missing for OBJTYPE {OBJTYPE} with TRANSID {TRANSID}'.format(**elveg_tags))
+            return osmtags
 
         # There are more vegstatus values than listed in https://wiki.openstreetmap.org/w/images/c/cc/Elveg_SOSI_4.0_2008.pdf
         # There is a more complete list in chapter 7.3.11 in 
