@@ -409,7 +409,7 @@ osm_input = os.path.join(directory, kommune_number + 'Elveg_default.osm')
 osm_output = os.path.join(directory, kommune_number + 'Elveg.osm')
 elveg_fart = os.path.join(directory, kommune_number + 'Fart.txt')
 elveg_hoyde = os.path.join(directory, kommune_number + 'Hoyde.txt')
-osm_barrier_output = os.path.join(directory, kommune_number + 'barriers.osm')
+osm_barrier_output = os.path.join(directory, kommune_number + 'detatched_barriers.osm')
 
 # Loop over speed limits and tags where the whole 
 # way where possible. Other places, add to split list
@@ -581,6 +581,10 @@ for coord in node_overlaps:
         print "Warning: The following (coordinates, node ids) have more than two nodes per coordinate"
         print (coord,node_lookup[coord])
 
+# Create OSM object for manual merging of off-way barriers
+osmobj_barriers = ElvegOSM()
+
+
 # Loop through and process all single nodes
 for nid in noway_node_ids:
     noway_node = osmobj.nodes[nid]
@@ -620,7 +624,10 @@ for nid in noway_node_ids:
         # Find the other waynode that has the same coordinates
         way_node_id = waynode_from_coord(coord)
         if way_node_id is None:
-            sys.stderr.write('Warning: Unable to merge Vegsperring at coordinates ' + str(coord) + '\n')
+            #sys.stderr.write('Warning: Unable to merge Vegsperring at coordinates ' + str(coord) + '\n')
+            # Write to separate OSM file instead
+            osmobj_barriers.nodes[noway_node.id] = noway_node
+            del osmobj.nodes[noway_node.id]
         else:
             # Merge tags into the way node
             merge_nodes(way_node_id, noway_node.id)
@@ -640,6 +647,7 @@ for nid in noway_node_ids:
 # TODO: Add turn restrictions from XXXXSving.txt
 
 osmobj.save(osm_output)
+osmobj_barriers.save(osm_barrier_output)
 
 
 
