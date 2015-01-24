@@ -495,6 +495,11 @@ for wid,w in osmobj.ways.items():
     osm_tags = create_osmtags(w.elveg_tags)
     w.tags = osm_tags
 
+    # Check that way has VPA Elveg tag
+    if not w.elveg_tags.has_key('VPA'):
+        warn("VPA missing for OBJTYPE {OBJTYPE} with TRANSID {TRANSID}".format(**w.elveg_tags))
+        continue
+
     # Add way length as given by VPA to the roadddata structure
     transid = w.elveg_tags['TRANSID']
     vpa = [int(n.strip(':;')) for n in w.elveg_tags["VPA"].split()]
