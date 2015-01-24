@@ -108,6 +108,7 @@ def merge_nodes(to_node_id, from_node_id):
                 # Hairy - if this Exception is caught, some tags will have been copied
                 raise KeyError(errmsg)
         # No confict, so copy tags
+        osmobj.nodes[to_node_id].tags[tag] = osmobj.nodes[from_node_id].tags[tag]
     # Delete the from_node
     osmobj.nodes.pop(from_node_id)
 
