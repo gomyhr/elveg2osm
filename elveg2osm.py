@@ -45,7 +45,7 @@ class ElvegOSM(osmapis.OSM):
             d_from_previous = ggresults['s12']
             if i != 0 and d_from_previous < 0.5:
                 # Report if very short distance
-                sys.stderr.write('Short distance ({2}) for transid {0} to node No. {1}\n'.format(transid, i,d_from_previous))
+                warn(u"Short distance ({2}) for transid {0} to node No. {1}".format(transid, i,d_from_previous))
             distance_so_far += d_from_previous
             node_distances.append(distance_so_far)
             # Prepare previous coordinates for next round
@@ -79,6 +79,7 @@ osmapis.wrappers["node"] = ElvegNode
 osmapis.wrappers["way"]  = ElvegWay
 
 def warn(warning):
+    warning = warning.encode('utf-8')
     sys.stderr.write(warning + '\n')
 
 def waynode_from_coord(coord):
@@ -97,16 +98,16 @@ def waynode_from_coord(coord):
     return way_nodes[0]
 
 def merge_nodes(to_node_id, from_node_id):
-    #print 'Merging into node {0} from node {1}'.format(to_node_id, from_node_id)
+    #print u"Merging into node {0} from node {1}".format(to_node_id, from_node_id)
     global osmobj
     for tag in osmobj.nodes[from_node_id].tags.iterkeys():
         if osmobj.nodes[to_node_id].tags.has_key(tag):
             # Potential conflict, but only if the value is different
             if osmobj.nodes[to_node_id].tags[tag] != osmobj.nodes[from_node_id].tags[tag]:
                 # A conflict for real
-                errmsg = 'Conflict in merging nodes {0} and {1} for tag {2}\n'.format(to_node_id, from_node_id, tag)
+                errmsg = u"Conflict in merging nodes {0} and {1} for tag {2}\n".format(to_node_id, from_node_id, tag)
                 # Hairy - if this Exception is caught, some tags will have been copied
-                raise KeyError(errmsg)
+                raise KeyError(errmsg.encode('utf-8'))
         # No confict, so copy tags
         osmobj.nodes[to_node_id].tags[tag] = osmobj.nodes[from_node_id].tags[tag]
     # Delete the from_node
@@ -146,7 +147,7 @@ def create_osmtags(elveg_tags):
         if elveg_tags.has_key('VNR'):
             vegkategori,vegstatus,vegnummer = [s.strip(':;') for s in elveg_tags['VNR'].split()]
         else:
-            warn('VNR missing for OBJTYPE {OBJTYPE} with TRANSID {TRANSID}'.format(**elveg_tags))
+            warn(u"VNR missing for OBJTYPE {OBJTYPE} with TRANSID {TRANSID}".format(**elveg_tags))
             return osmtags
 
         # There are more vegstatus values than listed in https://wiki.openstreetmap.org/w/images/c/cc/Elveg_SOSI_4.0_2008.pdf
@@ -167,7 +168,7 @@ def create_osmtags(elveg_tags):
             elif vegstatus in ['P','Q']: # Vedtatt veg, planlagt veg
                 osmtags['action'] = 'delete'
             else:
-                warn('Unknown vegstatus {0} for TRANSID {1}'.format(vegstatus,elveg_tags['TRANSID']))
+                warn(u"Unknown vegstatus {0} for TRANSID {1}".format(vegstatus,elveg_tags['TRANSID']))
         elif elveg_tags['OBJTYPE'] == u'Bilferjestrekning':
             # Set the class for the ferry route
             if vegstatus == 'S':
@@ -176,7 +177,7 @@ def create_osmtags(elveg_tags):
             elif vegstatus in ['E','F']: # Vedtatt fergestrekning, planlagt fergestrekning
                 osmtags['action'] = 'delete'
             else:
-                warn('Ferry route with TRANSID {0} has unknown vegstatus {1}'.format(elveg_tags['TRANSID'],vegstatus))
+                warn(u"Ferry route with TRANSID {0} has unknown vegstatus {1}".format(elveg_tags['TRANSID'],vegstatus))
 
         # Add ref to road kategories Europaveg, Riksveg and Fylkesveg
         if vegkategori == 'E':
@@ -209,7 +210,7 @@ def create_osmtags(elveg_tags):
         # This probably only applies to roads and ferry routes - verify that
         if elveg_tags['OBJTYPE'] not in roadOBJTYPEs and elveg_tags['VKJORFLT'] != '1#2'    :
             #print elveg_tags
-            warn(u'Processing VKJORFLT tag for OBJTYPE {OBJTYPE} for TRANSID {TRANSID}: {VKJORFLT}'.format(**elveg_tags))
+            warn(u"Processing VKJORFLT tag for OBJTYPE {OBJTYPE} for TRANSID {TRANSID}: {VKJORFLT}".format(**elveg_tags))
         # Use the parse_lanes() function find the correct tags
         lane_tags = parse_lanes(elveg_tags['VKJORFLT'])
         osmtags.update(lane_tags)
@@ -341,7 +342,7 @@ def split_way(osmobj, way_id, split_points):
         if distance_to_upper < 0.5 or distance_to_lower < 0.5:
             # Verify that we have no negative distances (which is a bug)
             if distance_to_upper < 0. or distance_to_lower < 0.:
-                warn("Negative distances for TRANSID {0}".format(transid))
+                warn(u"Negative distances for TRANSID {0}".format(transid))
             # Reuse closest node
             if distance_to_upper < distance_to_lower:
                 split_index = upper_split_index
@@ -375,7 +376,7 @@ def split_way(osmobj, way_id, split_points):
             split_node = ElvegNode(attribs={"lon": newlon, "lat": newlat})
             if osmobj.nodes.has_key(split_node.id):
                 # This should not happen if ElvegNode.__init__() does the right thing
-                raise Exception('Almost overwrote node {0}\n'.format(split_node.id))
+                raise Exception(u"Almost overwrote node {0}\n".format(split_node.id).encode('utf-8'))
             osmobj.nodes[split_node.id] = split_node
 
             # TEMPORARY:
@@ -397,6 +398,10 @@ def split_way(osmobj, way_id, split_points):
     # Reverse direction so that first way segment comes first
     return splitway_id_list[::-1]
 
+
+    ###########################################################
+#           main                                          #
+###########################################################
         
 # Read input arguments
 directory = sys.argv[1]
@@ -445,7 +450,7 @@ with open(elveg_fart, 'rb') as ef:
                                               
 # Add height limits to roaddata (if the file exists)
 if not os.path.isfile(elveg_hoyde):
-    warn("File {0} does not exist and is not used".format(elveg_hoyde))
+    warn(u"File {0} does not exist and is not used".format(elveg_hoyde))
 else:
     with open(elveg_hoyde, 'rb') as eh:
         # Read first four header lines
@@ -497,7 +502,7 @@ for wid,w in osmobj.ways.items():
 
     # Check that way has VPA Elveg tag
     if not w.elveg_tags.has_key('VPA'):
-        warn("VPA missing for OBJTYPE {OBJTYPE} with TRANSID {TRANSID}".format(**w.elveg_tags))
+        warn(u"VPA missing for OBJTYPE {OBJTYPE} with TRANSID {TRANSID}".format(**w.elveg_tags))
         continue
 
     # Add way length as given by VPA to the roadddata structure
@@ -522,7 +527,7 @@ for wid,w in osmobj.ways.items():
     # There is at least one case where the end point is outside the VPA meter range
     # Remove end points outside the range
     while end_points[-1] > roaddata[transid]['length']:
-        warntemplate = "Warning: End point {0} m outside of VPA length of road ({1} m) for TRANSID {2}"
+        warntemplate = u"Warning: End point {0} m outside of VPA length of road ({1} m) for TRANSID {2}"
         warnstring = warntemplate.format(end_points[-1], roaddata[transid]['length'], transid)
         warn(warnstring)
         end_points.pop()
@@ -628,7 +633,7 @@ for nid in noway_node_ids:
         elif vegsperringtype == u'Ukjent':
             noway_node.tags['barrier'] = 'yes'
         else:
-            warn('Unknown barrier: {0}'.format(vegsperringtype))
+            warn(u"Unknown barrier: {0}".format(vegsperringtype))
             noway_node.tags['barrier'] = 'yes'
         # Find the other waynode that has the same coordinates
         way_node_id = waynode_from_coord(coord)
