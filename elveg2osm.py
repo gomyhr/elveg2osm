@@ -656,7 +656,27 @@ for nid in noway_node_ids:
 
 # TODO: Add amenity="ferry terminal" on nodes with OBJTYPE=Ferjekai
 
-# TODO: Remove all ways and non-way nodes with action=delete
+# Remove all ways and non-way nodes with action=delete and delete unused nodes
+# Loop through ways, collect ways with action=delele and
+# id of nodes in ways
+toDelete = set()
+nodesUsed = set()
+for _,way in osmobj.ways.iteritems():
+    if "action" in way.tags and way.tags['action'] == 'delete':
+        toDelete.add(way)
+    else:
+        for n in way.nds:
+            nodesUsed.add(n)
+# Collects nodes which should be deleted
+for _,node in osmobj.nodes.iteritems():
+    if "action" in node.tags and node.tags['action'] == 'delete':
+        toDelete.add(node)
+    elif (node.id not in nodesUsed) and (len(node.tags)) == 0:
+        toDelete.add(node)
+
+# Delete elements
+for element in toDelete:
+    osmobj.discard(element)
 
 # TODO: Add turn restrictions from XXXXSving.txt
 
