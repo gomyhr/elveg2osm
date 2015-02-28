@@ -161,6 +161,7 @@ def create_osmtags(elveg_tags):
             elif vegstatus == 'M':
                 osmtags['DEBUG'] = u'M\xf8te- og rasteplasser'
             elif vegstatus in ['P','Q']: # Vedtatt veg, planlagt veg
+                osmtags['DEBUG'] = 'Vedtatt (V) eller planglag (P): ' + vegstatus
                 osmtags['action'] = 'delete'
             else:
                 warn(u"Unknown vegstatus {0} for TRANSID {1}".format(vegstatus,elveg_tags['TRANSID']))
@@ -170,6 +171,7 @@ def create_osmtags(elveg_tags):
                 osmtags['route'] = 'ferry'
                 osmtags['class'] = category2highwayclass[vegkategori]
             elif vegstatus in ['E','F']: # Vedtatt fergestrekning, planlagt fergestrekning
+                osmtags['DEBUG'] = 'Vedtatt fergestrekning, planlagt fergestrekning ' + vegstatus
                 osmtags['action'] = 'delete'
             else:
                 warn(u"Ferry route with TRANSID {0} has unknown vegstatus {1}".format(elveg_tags['TRANSID'],vegstatus))
@@ -200,6 +202,7 @@ def create_osmtags(elveg_tags):
     # OBJTYPE not handled - add deletion tag and return
     else:
         warn(u"Deleting unimplemented OBJTYPE {OBJTYPE} with TRANSID {TRANSID}".format(**elveg_tags))
+        osmtags['DEBUG'] = 'OBJTYPE not handled: ' + elveg_tags['OBJTYPE']
         osmtags['action'] = 'delete'
         return osmtags
 
@@ -656,6 +659,7 @@ for nid in noway_node_ids:
             merge_nodes(way_node_id, noway_node.id)
     elif noway_node.elveg_tags['OBJTYPE'] == 'Kommunedele':
         # We do not use this tag, mark this node for deletion
+        noway_node.tags['DEBUG'] = 'Kommunedele'
         noway_node.tags['action'] = 'delete'
     elif noway_node.elveg_tags['OBJTYPE'] == 'Ferjekai':
         # These nodes are not connected to the road network
