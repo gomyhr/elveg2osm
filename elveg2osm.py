@@ -413,12 +413,13 @@ else:
     kummune_int = int(kommune_number)
 
 
-# Find the names of the *.txt files
+# Find the names of the other files
 osm_input = os.path.join(directory, kommune_number + 'Elveg_default.osm')
 osm_output = os.path.join(directory, kommune_number + 'Elveg.osm')
 elveg_fart = os.path.join(directory, kommune_number + 'Fart.txt')
 elveg_hoyde = os.path.join(directory, kommune_number + 'Hoyde.txt')
 osm_barrier_output = os.path.join(directory, kommune_number + 'detatched_barriers.osm')
+osm_deleted_output = os.path.join(directory, kommune_number + 'deleted_elements.osm')
 
 # Loop over speed limits and tags where the whole 
 # way where possible. Other places, add to split list
@@ -674,15 +675,23 @@ for node in osmobj.nodes.itervalues():
     elif (node.id not in nodes_used) and (len(node.tags)) == 0:
         to_delete.add(node)
 
-# Delete elements
+# Delete objects from output and add them to a separate file
+osmobj_deleted = ElvegOSM()
 for element in to_delete:
     osmobj.discard(element)
+    osmobj_deleted.add(element)
+
+# Copy nodes needed by ways in osmobj_deleted
+for delway in osmobj_deleted.ways.itervalues():
+    for nid in delway.nds:
+        if not osmobj_deleted.nodes.has_key(nid):
+            osmobj_deleted.add(osmobj.nodes[nid])
 
 # TODO: Add turn restrictions from XXXXSving.txt
 
 osmobj.save(osm_output)
 osmobj_barriers.save(osm_barrier_output)
-
+osmobj_deleted.save(osm_deleted_output)
 
 
 
