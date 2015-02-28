@@ -132,11 +132,6 @@ def create_osmtags(elveg_tags):
 
     osmtags = dict()
 
-    # Add the nvdb:id tag from the TRANSID tag
-    # All ways should have a TRANSID (will change to LOKALID with SOSI 4.5)
-    osmtags['nvdb:id'] = elveg_tags['TRANSID']
-
-
     # Roads and ferry routes share many tags, and are therefore
     # treated together
     if elveg_tags['OBJTYPE'] in roadOBJTYPEs.union([u'Bilferjestrekning']) :
@@ -187,23 +182,29 @@ def create_osmtags(elveg_tags):
 
     # Gang- og sykkelveg. Only a fraction of all of those are in the data. 
     # Nevertheless, include those that are.
-    if elveg_tags['OBJTYPE'] == 'GangSykkelVegSenterlinje':
+    elif elveg_tags['OBJTYPE'] == 'GangSykkelVegSenterlinje':
         osmtags['highway'] = 'cycleway'
         osmtags['foot'] = 'yes'
-
-    # Import GATENAVN for any type of way, although it would probably only exist for road objects
-    if elveg_tags.has_key('GATENAVN'):
-        osmtags['name'] = elveg_tags['GATENAVN']
 
     # OBJTYPE=Fortau is sometimes used when a Gang- og sykkelveg goes over 
     # in a sidewalk for a while
     # A sidewalk is usually best represented as a sidewalk=* on a road,
     # but at least in the conversion we let it be a separate way.
-    if elveg_tags['OBJTYPE'] == 'Fortau':
+    elif elveg_tags['OBJTYPE'] == 'Fortau':
         osmtags['highway'] = 'footway'
         osmtags['footway'] = 'sidewalk' 
         osmtags['note'] = 'Consider adding sidewalk as a tag on the road'
     
+    # TODO: OBJTYPE="Frittst\xe5ende trapp" if they look useful
+
+    # OBJTYPE not handled - add deletion tag and return
+    else:
+        warn(u"Deleting unimplemented OBJTYPE {OBJTYPE} with TRANSID {TRANSID}".format(**elveg_tags))
+        osmtags['action'] = 'delete'
+        return osmtags
+
+    ### Finished switching between OBJTYPEs
+    ### From now on we have one of the known OBJTYPEs above
 
     # Add information about lanes from the VKJORFLT tag (oneway=*, lanes=*)
     if elveg_tags.has_key('VKJORFLT'):
@@ -214,6 +215,10 @@ def create_osmtags(elveg_tags):
         # Use the parse_lanes() function find the correct tags
         lane_tags = parse_lanes(elveg_tags['VKJORFLT'])
         osmtags.update(lane_tags)
+
+    # Import GATENAVN for any type of way, although it would probably only exist for road objects
+    if elveg_tags.has_key('GATENAVN'):
+        osmtags['name'] = elveg_tags['GATENAVN']
 
     # Add information about tunnels and bridges from MEDIUM tag
     if elveg_tags.has_key('MEDIUM'):
@@ -237,7 +242,10 @@ def create_osmtags(elveg_tags):
             # There should be no other possible values for MEDIUM
             warn(u"Unknown MEDIUM value '{MEDIUM}' for OBJTYPE {OBJTYPE} for TRANSID {TRANSID}".format(**elveg_tags))
 
-    # TODO: OBJTYPE="Frittst\xe5ende trapp" if they look useful
+    # Add the nvdb:id tag from the TRANSID tag
+    # All ways should have a TRANSID (will change to LOKALID with SOSI 4.5)
+    osmtags['nvdb:id'] = elveg_tags['TRANSID']
+
 
     return osmtags
 
