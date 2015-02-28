@@ -680,6 +680,8 @@ osmobj_deleted = ElvegOSM()
 for element in to_delete:
     osmobj.discard(element)
     osmobj_deleted.add(element)
+    if hasattr(element, 'elveg_tags'):
+        element.tags.update({'Elveg:' + k:v for k,v in element.elveg_tags.iteritems()})
 
 # Copy nodes needed by ways in osmobj_deleted
 for delway in osmobj_deleted.ways.itervalues():
