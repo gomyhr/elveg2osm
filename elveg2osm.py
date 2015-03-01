@@ -197,7 +197,14 @@ def create_osmtags(elveg_tags):
         osmtags['footway'] = 'sidewalk' 
         osmtags['note'] = 'Consider adding sidewalk as a tag on the road'
     
-    # TODO: OBJTYPE="Frittst\xe5ende trapp" if they look useful
+    # Import OBJTYPE=u'Frittst\xe5endeTrapp'
+    # There are many objects in Bergen (1201) and quite a few in 
+    # Stavanger (1103) and Sandnes (1102) as well.
+    # They are often integrated with the network of footways.
+    # There seems to be no consistent direction of the ways, 
+    # so do not set incline=up/down
+    elif elveg_tags['OBJTYPE'] == u'Frittst\xe5endeTrapp':
+        osmtags['highway'] = 'steps'
 
     # OBJTYPE not handled - add deletion tag and return
     else:
