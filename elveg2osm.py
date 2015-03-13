@@ -157,7 +157,8 @@ def create_osmtags(elveg_tags):
                 osmtags['highway'] = 'construction'
                 osmtags['construction'] = category2highwayclass[vegkategori]
             elif vegstatus == 'G':
-                osmtags['DEBUG'] = u'Veggrunn, ikke trafikkform\xe5l'
+                osmtags['FIXME'] = u'Veggrunn, ikke trafikkform\xe5l. Select appropriate road type.'
+                osmtags['highway'] = 'road'
             elif vegstatus == 'M':
                 osmtags['DEBUG'] = u'M\xf8te- og rasteplasser'
             elif vegstatus in ['P','Q']: # Vedtatt veg, planlagt veg
