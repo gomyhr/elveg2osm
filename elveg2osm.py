@@ -97,24 +97,28 @@ def waynode_from_coord(coord):
         return None
     return way_nodes[0]
 
-def merge_nodes(to_node_id, from_node_id):
-    #print u"Merging into node {0} from node {1}".format(to_node_id, from_node_id)
+def merge_nodes(node_id_list):
     global osmobj
-    for tag in osmobj.nodes[from_node_id].tags.iterkeys():
-        if osmobj.nodes[to_node_id].tags.has_key(tag):
-            # Potential conflict, but only if the value is different
-            if osmobj.nodes[to_node_id].tags[tag] != osmobj.nodes[from_node_id].tags[tag]:
-                # A conflict for real
-                errmsg = u"Conflict in merging nodes {0} and {1} for tag {2}\n".format(to_node_id, from_node_id, tag)
-                # Hairy - if this Exception is caught, some tags will have been copied
-                raise KeyError(errmsg.encode('utf-8'))
-        # No confict, so copy tags
-        osmobj.nodes[to_node_id].tags[tag] = osmobj.nodes[from_node_id].tags[tag]
-    # Delete the from_node
-    osmobj.nodes.pop(from_node_id)
-
-
-
+    # Record the attributes of the first node
+    first_attr = osmobj.nodes[node_id_list[0]].attribs
+    merged_tags = {}
+    for node_id in node_id_list:
+        for key,value in osmobj.nodes[node_id].tags.iteritems():
+            if merged_tags.has_key(key):
+                # Potential conflict, but only if value is different
+                if merged_tags[key] != value:
+                    # A conflict for real
+                    msg = u"Conflict values when merging tag {0} from node {1}: {2} and {3}".format(
+                                                                            key, node_id, merged_tags[key], value)
+                    warn(msg)
+            # No conflict, so copy tag
+            merged_tags[key] = value
+        # Delete the node
+        osmobj.nodes.pop(node_id)
+    # Create a new node
+    merged_node = ElvegNode(attribs=first_attr, tags=merged_tags)
+    osmobj.add(merged_node)
+    
 def create_osmtags(elveg_tags):
     '''Create tags based on standard tags in ????Elveg_default.osm'''
 
@@ -664,7 +668,7 @@ for nid in noway_node_ids:
             del osmobj.nodes[noway_node.id]
         else:
             # Merge tags into the way node
-            merge_nodes(way_node_id, noway_node.id)
+            merge_nodes([way_node_id, noway_node.id])
     elif noway_node.elveg_tags['OBJTYPE'] == 'Kommunedele':
         # We do not use this tag, mark this node for deletion
         noway_node.tags['DEBUG'] = 'Kommunedele'
