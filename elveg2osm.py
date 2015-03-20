@@ -101,6 +101,12 @@ def merge_nodes(node_id_list):
     global osmobj
     # Record the attributes of the first node
     first_attr = osmobj.nodes[node_id_list[0]].attribs
+    del first_attr['id']
+    # Join the way_ids lists of the nodes
+    way_ids = set()
+    for node_id in node_id_list:
+        way_ids.update(osmobj.nodes[node_id].way_ids)
+    # Join the tags
     merged_tags = {}
     for node_id in node_id_list:
         for key,value in osmobj.nodes[node_id].tags.iteritems():
@@ -117,7 +123,14 @@ def merge_nodes(node_id_list):
         osmobj.nodes.pop(node_id)
     # Create a new node
     merged_node = ElvegNode(attribs=first_attr, tags=merged_tags)
+    merged_node.way_ids = way_ids
     osmobj.add(merged_node)
+    # Replace deleted node_ids with new node_id in all affected ways
+    for way_id in way_ids:
+        way = osmobj.ways[way_id]
+        for i,way_node_id in enumerate(way.nds):
+            if way_node_id in node_id_list:
+                way.nds[i] = merged_node.id
     
 def create_osmtags(elveg_tags):
     '''Create tags based on standard tags in ????Elveg_default.osm'''
@@ -587,24 +600,24 @@ for wid,w in osmobj.ways.items():
     for i,segment_id in enumerate(segment_ids):
         osmobj.ways[segment_id].tags.update(newway_tags[i])
 
-# Loop through all ways and make a set of those nodes that are part of a way
+# Loop through all ways 
+# - make a set of those nodes that are part of a way
 way_node_ids = set()
 for way in osmobj.ways.values():
     way_node_ids.update(way.nds)
 # ... and those that are not part of a way
 noway_node_ids = set(osmobj.nodes).difference(way_node_ids)
 
-# Make a table with hash of indices of the nodes, in order to identify
-# nodes with (exactly) the same coordinates
-node_lookup = dict()
-node_overlaps = set()
-for id,node in osmobj.nodes.iteritems():
-    key = (node.lat, node.lon)
-    if node_lookup.has_key(key):
-        node_lookup[key].append(id)
-        node_overlaps.add(key)
-    else:
-        node_lookup[key] = [id]
+# Add way_id variable to every node which holds the way_ids of all ways
+# it is part of.
+for node in osmobj.nodes.itervalues():
+    node.way_ids = set()
+for way in osmobj.ways.itervalues():
+    for node_id in way.nds:
+        node = osmobj.nodes[node_id]
+        node.way_ids.add(way.id)
+        
+
 
 # DATA CHECKING: Check if any way nodes also have tags, or if all tags
 # are on duplicate nodes
@@ -613,15 +626,9 @@ for id,node in osmobj.nodes.iteritems():
 #    if len(waynode.tags) > 0:
 #        print waynode.tags
 
-# DATA CHECKING: Check that no coordinates have more than two nodes
-for coord in node_overlaps:
-    if len(node_lookup[coord]) != 2:
-        print "Warning: The following (coordinates, node ids) have more than two nodes per coordinate"
-        print (coord,node_lookup[coord])
 
 # Create OSM object for manual merging of off-way barriers
 osmobj_barriers = ElvegOSM()
-
 
 # Loop through and process all single nodes
 for nid in noway_node_ids:
@@ -659,16 +666,6 @@ for nid in noway_node_ids:
         else:
             warn(u"Unknown barrier: {0}".format(vegsperringtype))
             noway_node.tags['barrier'] = 'yes'
-        # Find the other waynode that has the same coordinates
-        way_node_id = waynode_from_coord(coord)
-        if way_node_id is None:
-            #sys.stderr.write('Warning: Unable to merge Vegsperring at coordinates ' + str(coord) + '\n')
-            # Write to separate OSM file instead
-            osmobj_barriers.nodes[noway_node.id] = noway_node
-            del osmobj.nodes[noway_node.id]
-        else:
-            # Merge tags into the way node
-            merge_nodes([way_node_id, noway_node.id])
     elif noway_node.elveg_tags['OBJTYPE'] == 'Kommunedele':
         # We do not use this tag, mark this node for deletion
         noway_node.tags['DEBUG'] = 'Kommunedele'
@@ -677,7 +674,6 @@ for nid in noway_node_ids:
         # These nodes are not connected to the road network
         # In OSM, they should ideally be on the node between the road and the ferry route.
         noway_node.tags['amenity'] = 'ferry terminal'
-
 
 # TODO: Add amenity="ferry terminal" on nodes with OBJTYPE=Ferjekai
 
@@ -712,6 +708,30 @@ for delway in osmobj_deleted.ways.itervalues():
     for nid in delway.nds:
         if not osmobj_deleted.nodes.has_key(nid):
             osmobj_deleted.add(osmobj.nodes[nid])
+
+# Make a table with hash of indices of the nodes, in order to identify
+# nodes with (exactly) the same coordinates
+node_lookup = dict()
+for id,node in osmobj.nodes.iteritems():
+    key = (node.lat, node.lon)
+    if node_lookup.has_key(key):
+        node_lookup[key].append(id)
+    else:
+        node_lookup[key] = [id]
+
+# Merge nodes in same location
+for coord, node_id_list in node_lookup.items():
+    if len(node_id_list) == 1:
+        continue
+    else:
+        merge_nodes(node_id_list)
+
+# Save barriers that are not merged to other nodes to a separate file
+for id,node in osmobj.nodes.items():
+    if not node.way_ids:
+        osmobj_barriers.nodes[id] = node
+        del osmobj.nodes[id]
+
 
 # TODO: Add turn restrictions from XXXXSving.txt
 
