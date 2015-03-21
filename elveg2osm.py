@@ -7,7 +7,6 @@ import numpy as np
 import geographiclib.geodesic as gg
 
 # Output have the following temporary features:
-# - The split nodes have tags newnode=yes
 # - Some ways have tags DEBUG=*. Those have Elveg tags I'm unsure about how to tag in OSM.
 
 
@@ -416,8 +415,8 @@ def split_way(osmobj, way_id, split_points):
                 raise Exception(u"Almost overwrote node {0}\n".format(split_node.id).encode('utf-8'))
             osmobj.nodes[split_node.id] = split_node
 
-            # TEMPORARY:
-            osmobj.nodes[split_node.id].tags['newnode'] = 'yes'
+            # FOR DEBUGGING WAY SPLITTING
+            #osmobj.nodes[split_node.id].tags['newnode'] = 'yes'
 
             # Create a new way from the split_point to the end of the way
             newway_nodes = [split_node.id] + way.nds[upper_split_index:]
