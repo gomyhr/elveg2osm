@@ -245,7 +245,8 @@ def create_osmtags(elveg_tags):
         osmtags.update(lane_tags)
 
     # Import GATENAVN for any type of way, although it would probably only exist for road objects
-    if elveg_tags.has_key('GATENAVN'):
+    # There are some empty GATENAVN values in the data set - do not set a name for those
+    if elveg_tags.has_key('GATENAVN') and elveg_tags['GATENAVN'] != '':
         osmtags['name'] = elveg_tags['GATENAVN']
 
     # Add information about tunnels and bridges from MEDIUM tag
