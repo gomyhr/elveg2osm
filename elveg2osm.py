@@ -178,7 +178,7 @@ def create_osmtags(elveg_tags):
             elif vegstatus == 'M':
                 osmtags['DEBUG'] = u'M\xf8te- og rasteplasser'
             elif vegstatus in ['P','Q']: # Vedtatt veg, planlagt veg
-                osmtags['DEBUG'] = 'Vedtatt (V) eller planglag (P): ' + vegstatus
+                osmtags['DEBUG'] = 'Vedtatt (P) eller planglagt (Q): ' + vegstatus
                 osmtags['action'] = 'delete'
             else:
                 warn(u"Unknown vegstatus {0} for TRANSID {1}".format(vegstatus,elveg_tags['TRANSID']))
