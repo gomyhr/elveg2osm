@@ -727,12 +727,16 @@ for coord, node_id_list in node_lookup.items():
     else:
         merge_nodes(node_id_list)
 
-# Remove the default speed limit of 50, since that may
-# be only due to missing reporting
+# Speed limit cleanup
 for id,way in osmobj.ways.iteritems():
+    # Remove the default speed limit of 50, since that may
+    # be only due to missing reporting
     if (way.tags.get('maxspeed', None) == '50' and 
-            way.tags['highway'] != 'trunk' and
-            way.tags['highway'] != 'secondary'):
+            way.tags.get('highway',None) not in ('trunk', 'secondary')):
+        del way.tags['maxspeed']
+    # Remove speed limits for non-roads (footway, cycleway, etc.)
+    if (way.tags.has_key('maxspeed') and
+            way.tags.get('highway', None) not in ('trunk', 'secondary', 'road', 'unclassified')):
         del way.tags['maxspeed']
 
 # Save barriers that are not merged to other nodes to a separate file
