@@ -181,7 +181,7 @@ def create_osmtags(elveg_tags):
                 osmtags['DEBUG'] = 'Vedtatt (P) eller planglagt (Q): ' + vegstatus
                 osmtags['action'] = 'delete'
             else:
-                warn(u"Unknown vegstatus {0} for TRANSID {1}".format(vegstatus,elveg_tags['TRANSID']))
+                warn(u"Unknown vegstatus {0} for {2} with TRANSID {1}".format(vegstatus,elveg_tags['TRANSID'],elveg_tags['OBJTYPE']))
         elif elveg_tags['OBJTYPE'] == u'Bilferjestrekning':
             # Set the class for the ferry route
             if vegstatus == 'S':
