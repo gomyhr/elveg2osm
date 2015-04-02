@@ -679,6 +679,7 @@ for nid in noway_node_ids:
 # TODO: Add amenity="ferry terminal" on nodes with OBJTYPE=Ferjekai
 
 # Remove all ways and non-way nodes with action=delete and delete unused nodes
+
 # Loop through ways, collect ways with action=delete and
 # id of nodes in ways
 to_delete = set()
@@ -686,9 +687,14 @@ nodes_used = set()
 for way in osmobj.ways.itervalues():
     if "action" in way.tags and way.tags['action'] == 'delete':
         to_delete.add(way)
+    elif "nvdb:id" in way.tags and len(way.tags) == 1:
+        to_delete.add(way)
+    elif len(way.tags) == 0:
+        to_delete.add(way)
     else:
         for n in way.nds:
             nodes_used.add(n)
+
 # Collects nodes which should be deleted
 for node in osmobj.nodes.itervalues():
     if "action" in node.tags and node.tags['action'] == 'delete':
