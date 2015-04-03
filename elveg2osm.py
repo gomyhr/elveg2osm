@@ -139,7 +139,7 @@ def create_osmtags(elveg_tags):
                              'F': 'secondary', # Fylkesveg, could also be primary
                              'K': 'road',      # Kommunal veg
                              'P': 'road',      # Privat veg
-                             'S': 'unclassified'}     # Skogsbilveg, possibly more info in the LBVKLASSE tag
+                             'S': 'track'}     # Skogsbilveg, possibly more info in the LBVKLASSE tag
 
     roadOBJTYPEs = set([u'VegSenterlinje', 
                         u'Svingekonnekteringslenke',
