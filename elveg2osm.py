@@ -280,47 +280,93 @@ def create_osmtags(elveg_tags):
 def parse_lanes(lane_string):
     lane_tags = dict()
 
-    # Early exit for the most commone values
+    # Strip whitespace from lane_string
+    lane_string = lane_string.strip()
+
+    # Early exit for the most coommone values
     if lane_string == '1#2':
         # Most common case - one lane in each direction - no special tags
-        return lane_tags
-    elif lane_string == '1':
+        pass
+    elif lane_string in ('1', '3'):
         # One-way street along way direction
         lane_tags['oneway'] = 'yes'
-        return lane_tags
-    elif lane_string == '2':
+    elif lane_string in ('2', '4'):
         # One-way street opposite to way direction
         lane_tags['oneway'] = '-1'
-        return lane_tags
     elif lane_string == '1#3':
         # One-way street along way direction
         lane_tags['oneway'] = 'yes'
         lane_tags['lanes'] = '2'
-        return lane_tags
     elif lane_string == '2#4':
         # One-way street along way direction
         lane_tags['oneway'] = '-1'
         lane_tags['lanes'] = '2'
-        return lane_tags
     elif lane_string == '1#3#5':
         # One-way street along way direction
         lane_tags['oneway'] = 'yes'
         lane_tags['lanes'] = '3'
-        return lane_tags
     elif lane_string == '2#4#6':
         # One-way street along way direction
         lane_tags['oneway'] = '-1'
         lane_tags['lanes'] = '3'
-        return lane_tags
     elif lane_string == '':
         # Sometimes this tag is empty -- assume that this means nothing special
-        return lane_tags
-
-    # TODO: Split lane string into individual lanes
-    # Postfix H1, H2, V1, V2 are for turning lanes, 
-    # postfix K is for public service vehicles (PSV)
-    # postfix O is for "waiting lanes", e.g. at ferry terminals.
-    lane_tags['note'] = "Elveg lane tags: {0}".format(lane_string)
+        pass
+    # TURN LANES
+    elif lane_string in ('1V1', '1H1', '1V2','1H2'):
+        # Left/right turning lane - mark as one-way
+        lane_tags['oneway'] = 'yes'
+    elif lane_string in ('2V1','2H1', '2V2', '2H2'):
+        # Left/right turning lane - mark as one-way
+        lane_tags['oneway'] = '-1'
+    elif lane_string in ('1#1V1', '1#1H1', '1#1H1#1V1'):
+        # One lane and additional turn lane - ignore the turn lane
+        lane_tags['oneway'] = 'yes'
+    elif lane_string in ('2#2V1', '2#2H1', '2#2H1#2V1'):
+        # One lane and additional turn lane - ignore the turn lane
+        lane_tags['oneway'] = '-1'
+    elif lane_string in ('1#2#2H1', '1#1H1#2', '1#2#2V1', '1#1V1#2', '1#2#1H1', '1#2#1V1'):
+        # One lane each direction and additional turn lane - ignore the turn lane
+        pass
+    # BIKE LANES
+    elif lane_string == '1#2#3S#4S':
+        # Two lanes with bike lanes in both directions
+        lane_tags['cycleway'] = 'lane'
+    elif lane_string == '1#3S':
+        # One lane plus bike lane
+        lane_tags['oneway'] = 'yes'
+        lane_tags['cycleway'] = 'lane'
+    elif lane_string == '2#4S':
+        # One lane plus bike lane
+        lane_tags['oneway'] = '-1'
+        lane_tags['cycleway'] = 'lane'
+    # BUS LANES
+    elif lane_string == '1#3K':
+        # One lane plus bus lane
+        lane_tags['oneway'] = 'yes'
+        lane_tags['lanes'] = '2'
+        lane_tags['lanes:psv'] = '1'
+    elif lane_string == '2#4K':
+        # One lane plus bus lane
+        lane_tags['oneway'] = '-1'
+        lane_tags['lanes'] = '2'
+        lane_tags['lanes:psv'] = '1'
+    elif lane_string == '2#4#6K':
+        # One lane plus bus lane
+        lane_tags['oneway'] = '-1'
+        lane_tags['lanes'] = '3'
+        lane_tags['lanes:psv'] = '1'
+    elif lane_string in ('1K', '3K'):
+        # Single bus lane
+        lane_tags['oneway'] = 'yes'
+        lane_tags['psv'] = 'designated'
+    else:
+        # TODO: Split lane string into individual lanes
+        # Postfix H1, H2, V1, V2 are for turning lanes, 
+        # postfix K is for public service vehicles (PSV)
+        # postfix O is for "waiting lanes", e.g. at ferry terminals.
+        lane_tags['FIXME'] = "Consider adding lane tags based on Elveg data: {0}".format(lane_string)
+        #warn("Unhandled VKJORFLT: " + lane_string)
     return lane_tags
 
 def split_way(osmobj, way_id, split_points):
