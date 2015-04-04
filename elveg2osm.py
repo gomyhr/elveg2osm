@@ -274,7 +274,11 @@ def create_osmtags(elveg_tags):
     # All ways should have a TRANSID (will change to LOKALID with SOSI 4.5)
     osmtags['nvdb:id'] = elveg_tags['TRANSID']
 
-
+    # Add date from NVDB
+    if elveg_tags.has_key('DATAFANGSTDATO'):
+        date = elveg_tags['DATAFANGSTDATO']
+        osmtags['nvdb:date'] = '%s-%s-%s' % (date[0:4],date[4:6],date[6:8])
+    
     return osmtags
 
 def parse_lanes(lane_string):
