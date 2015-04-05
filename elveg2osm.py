@@ -235,13 +235,31 @@ def create_osmtags(elveg_tags):
 
     # Add information about lanes from the VKJORFLT tag (oneway=*, lanes=*)
     if elveg_tags.has_key('VKJORFLT'):
-        # This probably only applies to roads and ferry routes - verify that
-        if elveg_tags['OBJTYPE'] not in roadOBJTYPEs and elveg_tags['VKJORFLT'] != '1#2'    :
-            #print elveg_tags
-            warn(u"Processing VKJORFLT tag for OBJTYPE {OBJTYPE} for TRANSID {TRANSID}: {VKJORFLT}".format(**elveg_tags))
-        # Use the parse_lanes() function find the correct tags
-        lane_tags = parse_lanes(elveg_tags['VKJORFLT'])
-        osmtags.update(lane_tags)
+        lane_code = elveg_tags['VKJORFLT']
+        if elveg_tags['OBJTYPE'] in roadOBJTYPEs:
+            lane_tags = parse_lanes(lane_code)
+            osmtags.update(lane_tags)
+        elif elveg_tags['OBJTYPE'] == 'GangSykkelVegSenterlinje':
+            if lane_code == '1#2':
+                # This is the standard - add not tags
+                pass
+            elif lane_code == '1':
+                # In March 2015 only present in bicycle roundabouts in
+                # Stavanger (1103)
+                osmtags['oneway'] = 'yes'
+            elif lane_code == '2':
+                # In March 2015 only present in Vestre Torggaten in 
+                # Bergen (1201)
+                # That one seems to be wrong (there is a one-way sign
+                # in the other direction)
+                osmtags['oneway'] = '-1'
+            else:
+                # This reacts to cycleways in Trondheim with lane_code 1#2#3S#4S
+                warn(u"Ignoring VKJORFLT tag for GangSykkelVegSenterlinje with TRANSID {TRANSID}: {VKJORFLT}".format(**elveg_tags)) 
+        else:
+            # Not road, not cycleway
+            if lane_code != '1#2':  # No warning for default 1#2
+               warn(u"Ignoring VKJORFLT tag for OBJTYPE {OBJTYPE} for TRANSID {TRANSID}: {VKJORFLT}".format(**elveg_tags)) 
 
     # Import GATENAVN for any type of way, although it would probably only exist for road objects
     # There are some empty GATENAVN values in the data set - do not set a name for those
