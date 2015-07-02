@@ -203,7 +203,7 @@ def create_osmtags(elveg_tags):
     # Nevertheless, include those that are.
     elif elveg_tags['OBJTYPE'] == 'GangSykkelVegSenterlinje':
         osmtags['highway'] = 'cycleway'
-        osmtags['foot'] = 'yes'
+        osmtags['foot'] = 'designated'
 
     # OBJTYPE=Fortau is sometimes used when a Gang- og sykkelveg goes over 
     # in a sidewalk for a while
