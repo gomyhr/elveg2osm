@@ -148,6 +148,10 @@ def create_osmtags(elveg_tags):
 
     osmtags = dict()
 
+    # Verify that the compulsory OBJTYPE tag is present
+    if not elveg_tags.has_key('OBJTYPE'):
+        warn(u"Missing OBJTYPE tag for TRANSID {TRANSID}".format(**elveg_tags))
+        return osmtags
     # Roads and ferry routes share many tags, and are therefore
     # treated together
     if elveg_tags['OBJTYPE'] in roadOBJTYPEs.union([u'Bilferjestrekning']) :
