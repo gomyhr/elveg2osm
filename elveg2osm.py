@@ -681,16 +681,6 @@ for way in osmobj.ways.values():
 # ... and those that are not part of a way
 noway_node_ids = set(osmobj.nodes).difference(way_node_ids)
 
-# Add way_id variable to every node which holds the way_ids of all ways
-# it is part of.
-for node in osmobj.nodes.itervalues():
-    node.way_ids = set()
-for way in osmobj.ways.itervalues():
-    for node_id in way.nds:
-        node = osmobj.nodes[node_id]
-        node.way_ids.add(way.id)
-        
-
 
 # DATA CHECKING: Check if any way nodes also have tags, or if all tags
 # are on duplicate nodes
@@ -787,6 +777,18 @@ for delway in osmobj_deleted.ways.itervalues():
     for nid in delway.nds:
         if not osmobj_deleted.nodes.has_key(nid):
             osmobj_deleted.add(osmobj.nodes[nid])
+
+# Add way_id variable to every node which holds the way_ids of all ways
+# it is part of.
+# This is to be used in the node merging and must therefore be made after
+# ways have been deleted above.
+for node in osmobj.nodes.itervalues():
+    node.way_ids = set()
+for way in osmobj.ways.itervalues():
+    for node_id in way.nds:
+        node = osmobj.nodes[node_id]
+        node.way_ids.add(way.id)
+
 
 # Make a table with hash of indices of the nodes, in order to identify
 # nodes with (exactly) the same coordinates
