@@ -825,6 +825,11 @@ for id,node in osmobj.nodes.items():
         osmobj_barriers.nodes[id] = node
         del osmobj.nodes[id]
 
+# Reverse ways with oneway=-1
+for id,way in osmobj.ways.iteritems():
+    if way.tags.get('oneway', None) == '-1':
+        way.nds.reverse()
+        way.tags['oneway'] = 'yes'
 
 # TODO: Add turn restrictions from XXXXSving.txt
 
