@@ -459,6 +459,7 @@ def split_way(osmobj, way_id, split_points):
             # Create a new way from the split node to the end of the way
             newway_nodes = way.nds[split_index:]
             newway = ElvegWay(tags=way.tags, nds=newway_nodes)
+            newway.elveg_tags = way.elveg_tags
             splitway_id_list.append(newway.id)
             osmobj.ways[newway.id] = newway
             
@@ -493,6 +494,7 @@ def split_way(osmobj, way_id, split_points):
             # Create a new way from the split_point to the end of the way
             newway_nodes = [split_node.id] + way.nds[upper_split_index:]
             newway = ElvegWay(tags=way.tags, nds=newway_nodes)
+            newway.elveg_tags = way.elveg_tags
             splitway_id_list.append(newway.id)
             osmobj.ways[newway.id] = newway
 
