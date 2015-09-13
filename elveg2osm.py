@@ -6,9 +6,6 @@ import csv
 import numpy as np
 import geographiclib.geodesic as gg
 
-# Output have the following temporary features:
-# - Some ways have tags DEBUG=*. Those have Elveg tags I'm unsure about how to tag in OSM.
-
 
 # Add useful (for our purpose) methods to the osmapis.OSM class
 class ElvegOSM(osmapis.OSM):
@@ -180,7 +177,7 @@ def create_osmtags(elveg_tags):
                 osmtags['FIXME'] = u'Veggrunn, ikke trafikkform\xe5l. Select appropriate road type.'
                 osmtags['highway'] = 'road'
             elif vegstatus == 'M':
-                osmtags['DEBUG'] = u'M\xf8te- og rasteplasser'
+                osmtags['FIXME'] = u'Finn riktig tag for m\xf8te og rasteplass'
             elif vegstatus in ['P','Q']: # Vedtatt veg, planlagt veg
                 osmtags['DEBUG'] = 'Vedtatt (P) eller planglagt (Q): ' + vegstatus
                 osmtags['action'] = 'delete'
