@@ -565,11 +565,15 @@ def merge_equal(osmobj, merge_list):
             #print "  Merge string" + str(new_way_string)
             # Generate node-string for merged way based on way_ids in new_way_string
             first_way = osmobj.ways[new_way_string[0]]
-            #print new_way_string
             for way_id in new_way_string[1:]:
                 way = osmobj.ways[way_id]
-                first_way.nds.extend(way.nds[1:])
-                osmobj.discard(way)
+                first_length = len(first_way.nds)
+                way_length = len(way.nds)
+                if first_length + way_length - 1 <= 2000:
+                    first_way.nds.extend(way.nds[1:])
+                    osmobj.discard(way)
+                else:
+                    first_way = way
 
 
 ###########################################################
