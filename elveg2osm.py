@@ -614,12 +614,14 @@ with open(elveg_fart, 'rb') as ef:
         fart_stop =  int(row['   Til'])
         fart_length = fart_stop - fart_start
         fart_limit = row[' Fart']
+        fart_felt = row['felt']
 
         if not roaddata.has_key(transid):
             roaddata[transid] = {}
         if not roaddata[transid].has_key('maxspeed'):
             roaddata[transid]['maxspeed'] = []
         roaddata[transid]['maxspeed'].append({'maxspeed': fart_limit,
+                                              'lanes': fart_felt,
                                               'start': fart_start,
                                               'stop': fart_stop})
                                               
@@ -643,12 +645,14 @@ else:
             height_stop =  int(row['   Til'])
             height_length = height_stop - height_start
             height_limit = row['H\xf8yde']
+            height_felt = row['felt']
 
             if not roaddata.has_key(transid):
                 roaddata[transid] = {}
             if not roaddata[transid].has_key('maxheight'):
                 roaddata[transid]['maxheight'] = []
             roaddata[transid]['maxheight'].append({'maxheight': height_limit,
+                                                   'lanes': height_felt,
                                                    'start': height_start,
                                                    'stop': height_stop})
 
@@ -721,7 +725,24 @@ for wid,w in osmobj.ways.items():
         for restriction_type in ['maxspeed', 'maxheight']: # Add any new restrictions here
             for j,restr in enumerate(roaddata[transid].get(restriction_type, [])):
                 if restr['start'] <= interval[0] and interval[1] <= restr['stop']:
-                    newway_tags[i][restriction_type] = restr[restriction_type]
+                    #if not w.elveg_tags.has_key('VKJORFLT'):
+                    #    print w.elveg_tags
+                    #warn(str((restr['lanes'], w.elveg_tags.get('VKJORFLT'))))
+                    if restr['lanes'] == w.elveg_tags.get('VKJORFLT', ''):
+                        # The restriction applies to all lanes of the road
+                        newway_tags[i][restriction_type] = restr[restriction_type]
+                    elif restr['lanes'] == '1' and w.elveg_tags.get('VKJORFLT') == "1#2":
+                        #warn("DEBUG: Heeding different lanes for restriction {} on TRANSID {} with lanes {} and restriction lanes {}".format(restriction_type, w.elveg_tags.get('TRANSID'), w.elveg_tags.get('VKJORFLT'), restr['lanes']))
+                        newway_tags[i][restriction_type + ':forward'] = restr[restriction_type]
+                    elif restr['lanes'] == '2' and w.elveg_tags.get('VKJORFLT') == "1#2":
+                        #warn("DEBUG: Heeding different lanes for restriction {} on TRANSID {} with lanes {} and restriction lanes {}".format(restriction_type, w.elveg_tags.get('TRANSID'), w.elveg_tags.get('VKJORFLT'), restr['lanes']))
+                        newway_tags[i][restriction_type + ':backward'] = restr[restriction_type]
+                    else:
+                        warn("Warning: Not heeding different lanes for restriction {} on TRANSID {} with lanes {} and restriction lanes {}".format(restriction_type,
+                                                                                                                                                   w.elveg_tags.get('TRANSID'),
+                                                                                                                                                   w.elveg_tags.get('VKJORFLT'),
+                                                                                                                                                   restr['lanes']))
+                        newway_tags[i][restriction_type] = restr[restriction_type]
 
     # DEBUG: Remove later
     #print newway_tags
@@ -875,6 +896,40 @@ for coord, node_id_list in node_lookup.items():
 
 # Speed limit cleanup
 for id,way in osmobj.ways.iteritems():
+    # Remove maxspeed:forward or maxspeed:backward if maxspeed is present
+    # (i.e. inconsistent specification - either redundant or conflicting)
+    if way.tags.has_key('maxspeed'):
+        if way.tags.has_key('maxspeed:forward'):
+            if way.tags['maxspeed'] != way.tags['maxspeed:forward']:
+                warn("Inconsistent maxspeed and maxspeed:forward present on TRANSID {}".format(way.elveg_tags['TRANSID']))
+                way.tags['maxspeed:backward'] = way.tags['maxspeed']
+                del way.tags['maxspeed']
+            else:
+                # Redundant
+                del way.tags['maxspeed:forward']
+        if way.tags.has_key('maxspeed:backward'):
+            if way.tags['maxspeed'] != way.tags['maxspeed:backward']:
+                warn("Inconsistent maxspeed and maxspeed:backward present on TRANSID {}".format(way.elveg_tags['TRANSID']))
+                way.tags['maxspeed:forward'] = way.tags['maxspeed']
+                del way.tags['maxspeed']
+            else:
+                # Redundant
+                del way.tags['maxspeed:backward']
+    # Join maxspeed:forward and maxspeed:backward if they are equal
+    # (this should have been unnecessary, but such limits are present in the data)
+    if (way.tags.has_key('maxspeed:forward') and
+            way.tags.has_key('maxspeed:backward') and
+            way.tags['maxspeed:forward'] == way.tags['maxspeed:backward']):
+        way.tags['maxspeed'] = way.tags['maxspeed:forward']
+        del way.tags['maxspeed:forward']
+        del way.tags['maxspeed:backward']
+    # If there is only :forward or :backward, apply to whole way
+    if (way.tags.has_key('maxspeed:forward') and not way.tags.has_key('maxspeed:backward')):
+        way.tags['maxspeed'] = way.tags['maxspeed:forward']
+        del way.tags['maxspeed:forward']
+    if (way.tags.has_key('maxspeed:backward') and not way.tags.has_key('maxspeed:forward')):
+        way.tags['maxspeed'] = way.tags['maxspeed:backward']
+        del way.tags['maxspeed:backward']
     # Remove the default speed limit of 50, since that may
     # be only due to missing reporting
     if (way.tags.get('maxspeed', None) == '50' and 
