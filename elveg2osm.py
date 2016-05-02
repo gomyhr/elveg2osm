@@ -823,7 +823,7 @@ for nid in noway_node_ids:
     elif noway_node.elveg_tags['OBJTYPE'] == 'Ferjekai':
         # These nodes are not connected to the road network
         # In OSM, they should ideally be on the node between the road and the ferry route.
-        noway_node.tags['amenity'] = 'ferry terminal'
+        noway_node.tags['amenity'] = 'ferry_terminal'
 
 # TODO: Add amenity="ferry terminal" on nodes with OBJTYPE=Ferjekai
 
