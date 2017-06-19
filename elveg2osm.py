@@ -207,6 +207,11 @@ def create_osmtags(elveg_tags):
         osmtags['highway'] = 'cycleway'
         osmtags['foot'] = 'designated'
 
+    # Sykkelveg. Those were not present in 2015 data, but in 2016 they showed
+    # up in 12 municipalities, and in 2017 they are present in 32 municipalities.
+    elif elveg_tags['OBJTYPE'] == 'SykkelVegSenterlinje':
+        osmtags['highway'] = 'cycleway'
+
     # OBJTYPE=Fortau is sometimes used when a Gang- og sykkelveg goes over 
     # in a sidewalk for a while
     # A sidewalk is usually best represented as a sidewalk=* on a road,
