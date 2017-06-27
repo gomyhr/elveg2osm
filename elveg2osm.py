@@ -903,23 +903,27 @@ for coord, node_id_list in node_lookup.items():
 for id,way in osmobj.ways.iteritems():
     # Remove maxspeed:forward or maxspeed:backward if maxspeed is present
     # (i.e. inconsistent specification - either redundant or conflicting)
-    if way.tags.has_key('maxspeed'):
-        if way.tags.has_key('maxspeed:forward'):
-            if way.tags['maxspeed'] != way.tags['maxspeed:forward']:
-                warn("Inconsistent maxspeed and maxspeed:forward present on TRANSID {}".format(way.elveg_tags['TRANSID']))
-                way.tags['maxspeed:backward'] = way.tags['maxspeed']
-                del way.tags['maxspeed']
+    if way.tags.has_key('maxspeed:forward') or way.tags.has_key('maxspeed:backward'):
+        if way.tags.has_key('maxspeed'):
+            # Redundant or conflicting specification - report which before removing maxspeed
+            if (way.tags['maxspeed'] == way.tags.get('maxspeed:forward', way.tags['maxspeed']) and
+                    way.tags['maxspeed'] == way.tags.get('maxspeed:backward', way.tags['maxspeed'])):
+                # Any maxspeed:forward and/or maxspeed:backward is compatible with maxspeed
+                # Remove those of maxspeed:forward and maxspeed:backward that exists
+                warn("Redundant maxspeed:forward and/or maxspeed:backward on TRANSID {}".format(way.elveg_tags['TRANSID']))
+                way.tags.pop('maxspeed:backward', None)
+                way.tags.pop('maxspeed:forward', None)
             else:
-                # Redundant
-                del way.tags['maxspeed:forward']
-        if way.tags.has_key('maxspeed:backward'):
-            if way.tags['maxspeed'] != way.tags['maxspeed:backward']:
-                warn("Inconsistent maxspeed and maxspeed:backward present on TRANSID {}".format(way.elveg_tags['TRANSID']))
-                way.tags['maxspeed:forward'] = way.tags['maxspeed']
-                del way.tags['maxspeed']
-            else:
-                # Redundant
-                del way.tags['maxspeed:backward']
+                # There are conflicts between maxspeed:forward/maxspeed:backward and maxspeed
+                # Delete all
+                warn("Inconsistent maxspeed/maxspeed:forward/maxspeed:backward on TRANSID {}: {}/{}/{}".format(
+                   way.elveg_tags['TRANSID'],
+                   way.tags['maxspeed'],
+                   way.tags.get('maxspeed:forward'),
+                   way.tags.get('maxspeed:backward')))
+                way.tags.pop('maxspeed', None)
+                way.tags.pop('maxspeed:backward', None)
+                way.tags.pop('maxspeed:forward', None)
     # Join maxspeed:forward and maxspeed:backward if they are equal
     # (this should have been unnecessary, but such limits are present in the data)
     if (way.tags.has_key('maxspeed:forward') and
