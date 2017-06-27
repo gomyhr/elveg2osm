@@ -132,12 +132,12 @@ def merge_nodes(node_id_list):
 def create_osmtags(elveg_tags):
     '''Create tags based on standard tags in ????Elveg_default.osm'''
 
-    category2highwayclass = {'E': 'trunk',     # Europaveg
-                             'R': 'trunk',     # Riksveg
-                             'F': 'secondary', # Fylkesveg, could also be primary
-                             'K': 'road',      # Kommunal veg
-                             'P': 'road',      # Privat veg
-                             'S': 'track'}     # Skogsbilveg, possibly more info in the LBVKLASSE tag
+    category2highwayclass = {'E': 'trunk',       # Europaveg
+                             'R': 'trunk',       # Riksveg
+                             'F': 'secondary',   # Fylkesveg, could also be primary
+                             'K': 'residential', # Kommunal veg
+                             'P': 'service',     # Privat veg
+                             'S': 'service'}     # Skogsbilveg, possibly more info in the LBVKLASSE tag
 
     roadOBJTYPEs = set([u'VegSenterlinje', 
                         u'Svingekonnekteringslenke',
