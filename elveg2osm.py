@@ -708,6 +708,11 @@ for wid,w in osmobj.ways.items():
     end_points = list(set(end_points))
     end_points.sort()
 
+    # Handle the special case where a way has zero VPA length (i.e. vpa[1] == vpa[2])
+    # This would come out as endpoint == [0] in the previous block, but should be [0, 0] to compatible with the following
+    if end_points == [0]:
+        end_points = [0, 0]
+
     # Test endpoints from .txt files against VPA lengths
     # There are several ways where the end point is outside the VPA meter range
     # Remove those TRANSIDs from the roaddata structure and move on to next way
