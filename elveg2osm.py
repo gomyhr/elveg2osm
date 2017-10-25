@@ -692,12 +692,13 @@ for wid,w in osmobj.ways.items():
     # Add way length as given by VPA to the roadddata structure
     transid = w.elveg_tags['TRANSID']
     vpa = [int(n.strip(':;')) for n in w.elveg_tags["VPA"].split()]
+
     # We do not care about those ways where we have no data to add,
     # so move to next if this is the case.
     if not roaddata.has_key(transid):
         continue
     roaddata[transid]['length'] = vpa[2] - vpa[1]
-    
+
     # make a sorted list of meter values, including end
     # points, where some roaddata may change
     end_points = [0, roaddata[transid]['length']]
@@ -706,7 +707,7 @@ for wid,w in osmobj.ways.items():
             end_points.extend([d[endpoint_type] for d in roaddata[transid].get(restriction_type, [])])
     end_points = list(set(end_points))
     end_points.sort()
-    
+
     # Test endpoints from .txt files against VPA lengths
     # There are several ways where the end point is outside the VPA meter range
     # Remove those TRANSIDs from the roaddata structure and move on to next way
