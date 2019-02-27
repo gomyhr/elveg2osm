@@ -952,7 +952,7 @@ for id,way in osmobj.ways.iteritems():
         del way.tags['maxspeed']
     # Remove speed limits for non-roads (footway, cycleway, etc.)
     if (way.tags.has_key('maxspeed') and
-            way.tags.get('highway', None) not in ('trunk', 'secondary', 'road', 'unclassified')):
+            way.tags.get('highway', None) not in ('trunk', 'secondary', 'road', 'unclassified', 'residential', 'service')):
         del way.tags['maxspeed']
 
 # Save barriers that are not merged to other nodes to a separate file
