@@ -128,16 +128,22 @@ def merge_nodes(node_id_list):
         for i,way_node_id in enumerate(way.nds):
             if way_node_id in node_id_list:
                 way.nds[i] = merged_node.id
-    
-def create_osmtags(elveg_tags):
-    '''Create tags based on standard tags in ????Elveg_default.osm'''
 
+def get_highwayclass(vegkategori, vegnummer):
     category2highwayclass = {'E': 'trunk',       # Europaveg
                              'R': 'trunk',       # Riksveg
                              'F': 'secondary',   # Fylkesveg, could also be primary
                              'K': 'residential', # Kommunal veg
                              'P': 'service',     # Privat veg
                              'S': 'service'}     # Skogsbilveg, possibly more info in the LBVKLASSE tag
+
+    highwayclass = category2highwayclass[vegkategori]
+    if vegkategori == 'F' and len(vegnummer) < 4:
+       highwayclass = 'primary'
+    return highwayclass
+
+def create_osmtags(elveg_tags):
+    '''Create tags based on standard tags in ????Elveg_default.osm'''
 
     roadOBJTYPEs = set([u'VegSenterlinje', 
                         u'Svingekonnekteringslenke',
@@ -170,10 +176,10 @@ def create_osmtags(elveg_tags):
         if elveg_tags['OBJTYPE'] in roadOBJTYPEs:
             # Set the road category
             if vegstatus in ['V','T','W']: # Eksisterende veg, Veg med midlertidig status, Midlertidig veg mer enn et aar
-                osmtags['highway'] = category2highwayclass[vegkategori]
+                osmtags['highway'] = get_highwayclass(vegkategori, vegnummer)
             elif vegstatus == 'A':
                 osmtags['highway'] = 'construction'
-                osmtags['construction'] = category2highwayclass[vegkategori]
+                osmtags['construction'] = get_highwayclass(vegkategori, vegnummer)
             elif vegstatus == 'G':
                 osmtags['FIXME'] = u'Veggrunn, ikke trafikkform\xe5l. Select appropriate road type.'
                 osmtags['highway'] = 'road'
@@ -188,7 +194,7 @@ def create_osmtags(elveg_tags):
             # Set the ferry for the ferry route
             if vegstatus == 'S':
                 osmtags['route'] = 'ferry'
-                osmtags['ferry'] = category2highwayclass[vegkategori]
+                osmtags['ferry'] = get_highwayclass(vegkategori, vegnummer)
             elif vegstatus in ['E','F']: # Vedtatt fergestrekning, planlagt fergestrekning
                 osmtags['DEBUG'] = 'Vedtatt fergestrekning, planlagt fergestrekning ' + vegstatus
                 osmtags['action'] = 'delete'
