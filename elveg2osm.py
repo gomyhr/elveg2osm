@@ -954,11 +954,11 @@ for id,way in osmobj.ways.iteritems():
     # Remove the default speed limit of 50, since that may
     # be only due to missing reporting
     if (way.tags.get('maxspeed', None) == '50' and 
-            way.tags.get('highway',None) not in ('trunk', 'secondary')):
+            way.tags.get('highway',None) not in ('trunk', 'primary', 'secondary')):
         del way.tags['maxspeed']
     # Remove speed limits for non-roads (footway, cycleway, etc.)
     if (way.tags.has_key('maxspeed') and
-            way.tags.get('highway', None) not in ('trunk', 'secondary', 'road', 'unclassified', 'residential', 'service')):
+            way.tags.get('highway', None) not in ('trunk', 'primary', 'secondary', 'road', 'unclassified', 'residential', 'service')):
         del way.tags['maxspeed']
 
 # Save barriers that are not merged to other nodes to a separate file
